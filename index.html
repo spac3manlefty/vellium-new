@@ -17,20 +17,19 @@
       --shadow: 0 24px 70px rgba(3, 6, 25, .38);
     }
     * { box-sizing: border-box; }
-    html { min-height: 100%; }
+    html { min-height: 100%; background: #000000; }
     body {
       margin: 0; min-height: 100vh; color: var(--ink);
       font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #090d21;
+      background: #000000;
       overflow-x: hidden;
     }
     body:before, body:after {
       content: ""; position: fixed; z-index: -2; border-radius: 50%; filter: blur(2px);
       pointer-events: none;
     }
-    body:before { width: 680px; height: 680px; left: -230px; top: -180px; background: radial-gradient(circle, #3c287e 0, #181548 43%, transparent 70%); }
-    body:after { width: 760px; height: 760px; right: -220px; bottom: -250px; background: radial-gradient(circle, #174c73 0, #111d43 43%, transparent 70%); }
-    .noise { position: fixed; inset: 0; z-index: -1; opacity: .045; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E"); }
+    body:before, body:after { display: none; }
+    .noise { display: none; }
     .shell { width: min(1180px, calc(100% - 36px)); margin: auto; }
     .glass { border: 1px solid rgba(255,255,255,.2); background: linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.035) 52%), var(--glass); box-shadow: var(--shadow), inset 0 1px rgba(255,255,255,.22); backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%); }
     .glassify { border-color: rgba(255,255,255,.28); box-shadow: inset 3px 3px 3px -1px rgba(255,255,255,.28), inset -3px -3px 3px -1px rgba(23,28,65,.42), var(--shadow); }
@@ -67,6 +66,13 @@
     .pill { padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,.09); color: #bec7df; }
     .empty { grid-column: 1/-1; text-align: center; padding: 55px; color: var(--muted); }
     footer { color: #77809c; text-align: center; padding: 0 0 28px; font-size: 12px; }
+    .viewer { display: none; margin: 0 0 34px; border-radius: 22px; overflow: hidden; }
+    .viewer.open { display: block; }
+    .viewer-bar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    .viewer-title { flex: 1; min-width: 0; padding-left: 5px; font-weight: 750; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .viewer-bar button { color: var(--muted); border: 1px solid var(--line); background: rgba(255,255,255,.06); border-radius: 10px; padding: 7px 10px; cursor: pointer; font: inherit; }
+    .viewer-bar button:hover { color: var(--ink); background: var(--glass-hi); }
+    .viewer-frame { display: block; width: 100%; height: min(72vh, 760px); border: 0; background: #000; }
     @media (max-width: 900px) { .grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 680px) { header { align-items: flex-start; } nav { gap: 0; } nav button { padding: 8px 9px; font-size: 12px; } .hero { padding-top: 34px; } .toolbar { align-items: stretch; flex-direction: column; } .search { width: 100%; } .grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 430px) { .shell { width: min(100% - 24px, 1180px); } .grid { gap: 10px; } .card { padding: 15px; min-height: 190px; } .card h3 { font-size: 17px; margin-top: 18px; } .game-icon { width: 44px; height: 44px; font-size: 23px; } }
@@ -97,6 +103,16 @@
       </div>
     </div>
     <section class="grid" id="grid" aria-live="polite"></section>
+    <section class="viewer glass glassify" id="viewer" aria-label="Link viewer">
+      <div class="viewer-bar">
+        <span class="viewer-title" id="viewerTitle">Link viewer</span>
+        <button id="reloadViewer" type="button">Reload</button>
+        <button id="fullscreenViewer" type="button">Fullscreen</button>
+        <button id="popoutViewer" type="button">Pop out</button>
+        <button id="closeViewer" type="button" aria-label="Close viewer">Close</button>
+      </div>
+      <iframe class="viewer-frame" id="viewerFrame" title="Selected link" allowfullscreen></iframe>
+    </section>
     <footer>Made with <3 by @zenoffwhite and @dreamofbonky. Credits to Saviru to GlassiFy.</footer>
   </main>
   <glassi-fy mode="super" scale="24" blur="5" frequency="0.012" octaves="3"></glassi-fy>
@@ -128,13 +144,46 @@
     // Add links here. Set category to "Games" or "Proxy" for menu filtering.
     const links = [
       {
-  id: "my-proxy",
-  title: "My Proxy",
-  url: "https://example.com",
-  category: "Proxy"
+        id: "fern-1",
+      title: "fern 1",
+      url: "https://bullguardian.s3.us-east-1.amazonaws.com/index.html",
+      category: "Proxy"
+    },
+    
+    {
+        id: "fern-2",
+      title: "fern 2",
+      url: "https://s3.amazonaws.com/deaganfern/index.html",
+      category: "Proxy"
+    },
+
+    {
+        id: "fern-3",
+      title: "fern 3",
+      url: "https://s3.amazonaws.com/bullubg/index.html",
+      category: "Proxy"
+    },
+
+     {
+        id: "arctic-1",
+      title: "arctic 1",
+      url: "https://wayground.com/_media/arctic/ead256dc-0d87-4534-ad4f-106368554887-v2",
+      category: "Proxy"
+    },
+
+     {
+        id: "arctic-2",
+      title: "arctic 2",
+      url: "https://wayground.com/_media/arctic/ead256dc-0d87-4534-ad4f-106368554887-v2",
+      category: "Proxy"
     }
+    
     ];
     const grid = document.querySelector("#grid");
+    const viewer = document.querySelector("#viewer");
+    const viewerFrame = document.querySelector("#viewerFrame");
+    const viewerTitle = document.querySelector("#viewerTitle");
+    let activeLink = null;
     let filter = "All", query = "", favorites = JSON.parse(localStorage.getItem("arcadea-favorites") || "[]");
     const render = () => {
       const visible = links.filter(link => {
@@ -160,7 +209,39 @@
     grid.addEventListener("click", e => {
       const star = e.target.closest("[data-star]");
       if (star) { const id = star.dataset.star; favorites = favorites.includes(id) ? favorites.filter(x => x !== id) : [...favorites, id]; localStorage.setItem("arcadea-favorites", JSON.stringify(favorites)); render(); return; }
-      const card = e.target.closest(".card"); if (card) { const item = links.find(link => link.id === card.dataset.id); if (item) window.open(item.url, "_blank", "noopener"); }
+      const card = e.target.closest(".card"); if (card) { const item = links.find(link => link.id === card.dataset.id); if (item) showLink(item); }
+    });
+    function showLink(link) {
+      activeLink = link;
+      viewerTitle.textContent = link.title;
+      viewerFrame.src = link.url;
+      viewer.classList.add("open");
+      viewer.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    document.querySelector("#closeViewer").addEventListener("click", () => {
+      viewerFrame.src = "about:blank";
+      viewer.classList.remove("open");
+      activeLink = null;
+    });
+    document.querySelector("#reloadViewer").addEventListener("click", () => {
+      if (activeLink) viewerFrame.src = activeLink.url;
+    });
+    document.querySelector("#fullscreenViewer").addEventListener("click", async () => {
+      if (document.fullscreenElement) return document.exitFullscreen();
+      if (viewerFrame.requestFullscreen) await viewerFrame.requestFullscreen();
+    });
+    document.querySelector("#popoutViewer").addEventListener("click", () => {
+      if (!activeLink) return;
+      const popup = window.open("about:blank", "_blank", "popup,width=1200,height=800");
+      if (!popup) return;
+      popup.opener = null;
+      popup.document.title = activeLink.title;
+      popup.document.body.style.cssText = "margin:0;background:#000;overflow:hidden";
+      const frame = popup.document.createElement("iframe");
+      frame.src = activeLink.url;
+      frame.allowFullscreen = true;
+      frame.style.cssText = "width:100vw;height:100vh;border:0;display:block;background:#000";
+      popup.document.body.appendChild(frame);
     });
   </script>
 </html>
