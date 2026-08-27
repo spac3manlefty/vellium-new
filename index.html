@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arcadea — Play beyond the block</title>
+  <style>
+    :root {
+      --ink: #f5f7ff;
+      --muted: #a8b0c9;
+      --line: rgba(255,255,255,.14);
+      --glass: rgba(255,255,255,.075);
+      --glass-hi: rgba(255,255,255,.17);
+      --violet: #a68cff;
+      --cyan: #67e8f9;
+      --pink: #fb8acb;
+      --shadow: 0 24px 70px rgba(3, 6, 25, .38);
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--ink);
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #090d21;
+      overflow-x: hidden;
+    }
+    body:before, body:after {
+      content: ""; position: fixed; z-index: -2; border-radius: 50%; filter: blur(2px);
+      pointer-events: none;
+    }
+    body:before { width: 680px; height: 680px; left: -230px; top: -180px; background: radial-gradient(circle, #3c287e 0, #181548 43%, transparent 70%); }
+    body:after { width: 760px; height: 760px; right: -220px; bottom: -250px; background: radial-gradient(circle, #174c73 0, #111d43 43%, transparent 70%); }
+    .noise { position: fixed; inset: 0; z-index: -1; opacity: .045; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E"); }
+    .shell { width: min(1180px, calc(100% - 36px)); margin: auto; }
+    .glass { border: 1px solid rgba(255,255,255,.2); background: linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.035) 52%), var(--glass); box-shadow: var(--shadow), inset 0 1px rgba(255,255,255,.22); backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%); }
+    .glassify { border-color: rgba(255,255,255,.28); box-shadow: inset 3px 3px 3px -1px rgba(255,255,255,.28), inset -3px -3px 3px -1px rgba(23,28,65,.42), var(--shadow); }
+    glassi-fy { display: none; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 22px 0 18px; }
+    .brand { display: flex; align-items: center; gap: 11px; text-decoration: none; color: var(--ink); font-weight: 800; letter-spacing: -.04em; font-size: 21px; }
+    .logo { display: grid; place-items: center; width: 37px; height: 37px; border-radius: 13px; font-size: 21px; background: linear-gradient(135deg, #bba7ff, #6ee7f8); box-shadow: 0 8px 25px #7062cf66; }
+    nav { display: flex; gap: 7px; padding: 5px; border-radius: 17px; }
+    nav button, .icon-btn { color: var(--muted); border: 0; background: transparent; border-radius: 12px; padding: 8px 13px; cursor: pointer; font: inherit; transition: .2s ease; }
+    nav button:hover, nav button.active, .icon-btn:hover { color: var(--ink); background: var(--glass-hi); }
+    .hero { padding: 54px 8px 38px; max-width: 730px; }
+    .eyebrow { color: var(--cyan); font-weight: 750; letter-spacing: .13em; text-transform: uppercase; font-size: 11px; }
+    h1 { font-size: clamp(42px, 7vw, 76px); line-height: .98; letter-spacing: -.075em; margin: 13px 0 20px; }
+    h1 span { color: transparent; background: linear-gradient(100deg, #fff 15%, #c1b4ff 55%, #70e7f6 90%); background-clip: text; -webkit-background-clip: text; }
+    .hero p { display: none; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin: 9px 0 24px; }
+    .search { display: flex; align-items: center; gap: 10px; padding: 12px 15px; border-radius: 16px; width: min(340px, 100%); }
+    .search span { color: var(--muted); font-size: 18px; }
+    input { border: 0; outline: 0; color: var(--ink); background: transparent; width: 100%; font: inherit; }
+    input::placeholder { color: #8b93ae; }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter { cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,.05); color: var(--muted); border-radius: 20px; padding: 8px 13px; font: inherit; transition: .2s; }
+    .filter.active, .filter:hover { color: #12152d; border-color: transparent; background: linear-gradient(100deg, #c4b5fd, #8cecf7); }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 17px; padding-bottom: 75px; }
+    .card { position: relative; min-height: 185px; padding: 20px; border-radius: 23px; cursor: pointer; overflow: hidden; transition: transform .25s, border-color .25s, box-shadow .25s; }
+    .card:hover { transform: translateY(-6px) scale(1.012); border-color: rgba(255,255,255,.34); box-shadow: 0 28px 62px rgba(2,5,22,.52), inset 0 1px rgba(255,255,255,.2); }
+    .card:after { content: ""; position: absolute; width: 160px; height: 160px; border-radius: 50%; right: -65px; top: -66px; background: var(--glow); filter: blur(2px); opacity: .5; }
+    .card-top { display: flex; justify-content: space-between; position: relative; z-index: 1; }
+    .game-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 17px; font-size: 28px; background: var(--icon); box-shadow: 0 9px 22px rgba(0,0,0,.18); }
+    .star { position: relative; z-index: 2; color: #727b9b; font-size: 20px; border: 0; background: 0; cursor: pointer; padding: 0; }
+    .star.on { color: #ffd66d; }
+    .card h3 { margin: 24px 0 3px; font-size: 20px; letter-spacing: -.035em; position: relative; z-index: 1; }
+    .meta { display: flex; align-items: center; gap: 10px; margin-top: 28px; color: #8790ad; font-size: 11px; position: relative; z-index: 1; }
+    .pill { padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,.09); color: #bec7df; }
+    .empty { grid-column: 1/-1; text-align: center; padding: 55px; color: var(--muted); }
+    footer { color: #77809c; text-align: center; padding: 0 0 28px; font-size: 12px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 680px) { header { align-items: flex-start; } nav { gap: 0; } nav button { padding: 8px 9px; font-size: 12px; } .hero { padding-top: 34px; } .toolbar { align-items: stretch; flex-direction: column; } .search { width: 100%; } .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 430px) { .shell { width: min(100% - 24px, 1180px); } .grid { gap: 10px; } .card { padding: 15px; min-height: 190px; } .card h3 { font-size: 17px; margin-top: 18px; } .game-icon { width: 44px; height: 44px; font-size: 23px; } }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <main class="shell">
+    <header>
+      <a class="brand" href="#"><span class="logo">✦</span> arcadea</a>
+      <nav class="glass glassify" aria-label="Main navigation">
+        <button class="active" data-nav="all">All links</button>
+        <button data-nav="games">Games</button>
+        <button data-nav="proxy">Proxy</button>
+        <button data-nav="favorites">Favorites <span id="favCount"></span></button>
+        <button data-nav="about">About</button>
+      </nav>
+    </header>
+    <section class="hero">
+      <div class="eyebrow">Your little corner of the internet</div>
+      <h1>Keep your hub <span>perfect.</span></h1>
+      <p>A hand-picked pocket arcade for quick breaks, long sessions, and everything in between. No installs. No noise. Just play.</p>
+    </section>
+    <div class="toolbar">
+      <label class="search glass glassify"><span>⌕</span><input id="search" type="search" placeholder="Find a link..." aria-label="Find a link"></label>
+      <div class="filters" aria-label="Link filters">
+        <button class="filter active glassify" data-filter="All">All links</button>
+      </div>
+    </div>
+    <section class="grid" id="grid" aria-live="polite"></section>
+    <footer>Made with <3 by @zenoffwhite and @dreamofbonky. Credits to Saviru to GlassiFy.</footer>
+  </main>
+  <glassi-fy mode="super" scale="24" blur="5" frequency="0.012" octaves="3"></glassi-fy>
+  <script>
+    /*
+      GlassiFy-inspired inline component.
+      Original project: https://github.com/Saviru/GlassiFy
+      Copyright (c) 2025 Saviru Kashmira Atapattu. MIT License.
+    */
+    class GlassiFy extends HTMLElement {
+      constructor() {
+        super();
+        const mode = this.getAttribute("mode") || "default";
+        const scale = Number(this.getAttribute("scale")) || 45;
+        const blur = Number(this.getAttribute("blur")) || 4;
+        const brightness = Number(this.getAttribute("brightness")) || 1;
+        const frequency = Number(this.getAttribute("frequency")) || .01;
+        const octaves = Number(this.getAttribute("octaves")) || 3;
+        const svg = document.createElement("div");
+        svg.innerHTML = `<svg aria-hidden="true" style="display:none"><filter id="arcadea-displacement"><feTurbulence type="turbulence" baseFrequency="${frequency}" numOctaves="${octaves}" result="turbulence"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="turbulence" scale="${scale}" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></svg>`;
+        document.body.appendChild(svg);
+        const style = document.createElement("style");
+        style.textContent = `.glassify{backdrop-filter:brightness(${brightness}) blur(${blur}px) url(#arcadea-displacement);-webkit-backdrop-filter:brightness(${brightness}) blur(${blur}px) url(#arcadea-displacement)}${mode !== "super" ? ".glassify{backdrop-filter:brightness(" + brightness + ") blur(" + blur + "px);-webkit-backdrop-filter:brightness(" + brightness + ") blur(" + blur + "px)}" : ""}`;
+        document.head.appendChild(style);
+      }
+    }
+    customElements.define("glassi-fy", GlassiFy);
+
+    // Add links here. Set category to "Games" or "Proxy" for menu filtering.
+    const links = [
+      {
+  id: "my-proxy",
+  title: "My Proxy",
+  url: "https://example.com",
+  category: "Proxy"
+    }
+    ];
+    const grid = document.querySelector("#grid");
+    let filter = "All", query = "", favorites = JSON.parse(localStorage.getItem("arcadea-favorites") || "[]");
+    const render = () => {
+      const visible = links.filter(link => {
+        const matchesSection = filter === "All" || (filter === "Favorites" && favorites.includes(link.id)) || link.category === filter;
+        return matchesSection && link.title.toLowerCase().includes(query.toLowerCase());
+      });
+      grid.innerHTML = visible.length ? visible.map(g => `<article class="card glass glassify" data-id="${g.id}" style="--icon:${g.color || "linear-gradient(135deg,#64748b,#c084fc)"};--glow:${g.glow || "#c084fc"}"><div class="card-top"><div class="game-icon">${g.icon || "↗"}</div><button class="star ${favorites.includes(g.id) ? "on" : ""}" data-star="${g.id}" aria-label="${favorites.includes(g.id) ? "Remove from" : "Add to"} favorites">★</button></div><h3>${g.title}</h3><div class="meta"><span class="pill">${g.category || "Link"}</span>${g.meta || "Saved"}</div></article>`).join("") : `<div class="empty">Nothing here yet.</div>`;
+      document.querySelector("#favCount").textContent = favorites.length ? `(${favorites.length})` : "";
+    };
+    render();
+    document.querySelector("#search").addEventListener("input", e => { query = e.target.value; render(); });
+    document.querySelectorAll(".filter").forEach(b => b.addEventListener("click", () => { filter = b.dataset.filter; document.querySelectorAll(".filter").forEach(x => x.classList.toggle("active", x === b)); render(); }));
+    document.querySelectorAll("[data-nav]").forEach(b => b.addEventListener("click", () => {
+      document.querySelectorAll("[data-nav]").forEach(x => x.classList.remove("active")); b.classList.add("active");
+      if (b.dataset.nav === "favorites") filter = "Favorites";
+      else if (b.dataset.nav === "games") filter = "Games";
+      else if (b.dataset.nav === "proxy") filter = "Proxy";
+      else if (b.dataset.nav === "all") filter = "All";
+      else { alert("Made by @zenoffwhite and @bonky on dc. Credits are in the readme, and licence on the github."); return; }
+      document.querySelectorAll(".filter").forEach(x => x.classList.toggle("active", x.dataset.filter === filter));
+      render();
+    }));
+    grid.addEventListener("click", e => {
+      const star = e.target.closest("[data-star]");
+      if (star) { const id = star.dataset.star; favorites = favorites.includes(id) ? favorites.filter(x => x !== id) : [...favorites, id]; localStorage.setItem("arcadea-favorites", JSON.stringify(favorites)); render(); return; }
+      const card = e.target.closest(".card"); if (card) { const item = links.find(link => link.id === card.dataset.id); if (item) window.open(item.url, "_blank", "noopener"); }
+    });
+  </script>
+</html>
